@@ -1,6 +1,7 @@
 package com.mycompany.chatbotservice.application.post;
 
 import com.mycompany.chatbotservice.application.pojo.Question;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,6 +14,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import weka.classifiers.meta.FilteredClassifier;
 import weka.core.Instances;
+import java.net.*;
+import java.io.*;
 
 @Path("/postModel")
 public class PostModelClass {
@@ -26,7 +29,6 @@ public class PostModelClass {
     @Path("/model")
     public Question convertBasic(Question question) throws Exception {
         System.out.println("PostModelClass");
-
         //POST ile gönderilen JSON verisini weka'daki algoritmalara yerleştirmek için arff'e çevirilir.
         try {
 
@@ -53,7 +55,7 @@ public class PostModelClass {
         FilteredClassifier NBM = (FilteredClassifier) weka.core.SerializationHelper.read("C:\\Users\\Makina\\Desktop\\fcBayes.model");
         FilteredClassifier J48 = (FilteredClassifier) weka.core.SerializationHelper.read("C:\\Users\\Makina\\Desktop\\fcJ48.model");
         FilteredClassifier IBK = (FilteredClassifier) weka.core.SerializationHelper.read("C:\\Users\\Makina\\Desktop\\fcIbk.model");
-
+        
         //JSON'dan arff'e dönüştürülen dosya okunuyor.
         BufferedReader breader = null;
         breader = new BufferedReader(new FileReader("C:\\Users\\Makina\\Desktop\\test.arff"));
@@ -66,12 +68,12 @@ public class PostModelClass {
         rsp[0] = NBM.classifyInstance(test.instance(0));       //response'un indisini döndürür.
         rsp[1] = J48.classifyInstance(test.instance(0));      //j48 algoritmasından dönen response'indisini tutar 
         rsp[2] = IBK.classifyInstance(test.instance(0));     //IBK algoritmasından dönen response'indisini tutar 
-
+        
         //algoritmalardan dönen index değerleri
-        System.out.println("clsLabel --> " + rsp[0]);       
+        System.out.println("clsNBM --> " + rsp[0]);
         System.out.println("clsJ48 --> " + rsp[1]);
         System.out.println("clsIBK --> " + rsp[2]);
-
+        
         double[] responseCounter = rspCounter();            //Hangi response'dan fazla var onu sayacak olan counter fonksiyonu
 
         double result = bestResponse(responseCounter);     //En çok hangi response' çıkmış onun döndürecek olan fonksiyon

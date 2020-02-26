@@ -22,7 +22,7 @@ import weka.core.Instances;
 @Path("/postExample")
 public class ExampleModelClass {
 
-    double[] rsp = new double[4];
+    double[] rsp = new double[3];
     String filePath = getFileName();
     @POST //İşlem tipi
     @Produces(MediaType.APPLICATION_JSON) //Döndürülen veri tipi

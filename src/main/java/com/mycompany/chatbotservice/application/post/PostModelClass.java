@@ -13,26 +13,29 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import weka.classifiers.meta.FilteredClassifier;
+import weka.core.Attribute;
 import weka.core.Instances;
-import java.net.*;
-import java.io.*;
 
 @Path("/postModel")
 public class PostModelClass {
-
     //Burada diğer algortimalarla karşılaştırabilmek için algoritmalardan dönen response indislerini tutcaz.
     double[] rsp = new double[3];
+    String filePath = getFileName();
 
     @POST //İşlem tipi
-    @Produces(MediaType.APPLICATION_JSON) //Döndürülen veri tipi
+    @Produces(MediaType.TEXT_PLAIN) //Döndürülen veri tipi
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/model")
-    public Question convertBasic(Question question) throws Exception {
+    public String convertBasic(Question question) throws Exception {
         System.out.println("PostModelClass");
+        ClassLoader classLoader = new PostModelClass().getClass().getClassLoader();
+
+
         //POST ile gönderilen JSON verisini weka'daki algoritmalara yerleştirmek için arff'e çevirilir.
         try {
+            System.out.println("file name --> "+getFileName());
 
-            FileWriter arff = new FileWriter("C:\\Users\\Makina\\Desktop\\test.arff");
+            FileWriter arff = new FileWriter(filePath);
 
             System.out.println(question.getQuestion());
 
@@ -52,19 +55,26 @@ public class PostModelClass {
         }
 
         //Model yüklendi
-        FilteredClassifier NBM = (FilteredClassifier) weka.core.SerializationHelper.read("C:\\Users\\Makina\\Desktop\\fcBayes.model");
-        FilteredClassifier J48 = (FilteredClassifier) weka.core.SerializationHelper.read("C:\\Users\\Makina\\Desktop\\fcJ48.model");
-        FilteredClassifier IBK = (FilteredClassifier) weka.core.SerializationHelper.read("C:\\Users\\Makina\\Desktop\\fcIbk.model");
+        //Model yüklendi
+        System.out.println("modeller yükleniyor");
+
+        String J48ModelPath = "models/fcJ48.model";
+        String BayesModelPath = "models/fcBayes.model";
+        String IbkModelPath = "models/fcIbk.model";
+
+        //resource
+        FilteredClassifier NBM = (FilteredClassifier) weka.core.SerializationHelper.read(classLoader.getResource(BayesModelPath).getFile());
+        FilteredClassifier J48 = (FilteredClassifier) weka.core.SerializationHelper.read(classLoader.getResource(J48ModelPath).getFile());
+        FilteredClassifier IBK = (FilteredClassifier) weka.core.SerializationHelper.read(classLoader.getResource(IbkModelPath).getFile());
         
         //JSON'dan arff'e dönüştürülen dosya okunuyor.
         BufferedReader breader = null;
-        breader = new BufferedReader(new FileReader("C:\\Users\\Makina\\Desktop\\test.arff"));
+        breader = new BufferedReader(new FileReader(filePath));
         Instances test = new Instances(breader);
         test.setClassIndex(test.numAttributes() - 1);
 
         Instances labeled = new Instances(test);
         // label instances
-
         rsp[0] = NBM.classifyInstance(test.instance(0));       //response'un indisini döndürür.
         rsp[1] = J48.classifyInstance(test.instance(0));      //j48 algoritmasından dönen response'indisini tutar 
         rsp[2] = IBK.classifyInstance(test.instance(0));     //IBK algoritmasından dönen response'indisini tutar 
@@ -80,7 +90,12 @@ public class PostModelClass {
 
         labeled.instance(0).setClassValue(result);
 
-        System.out.println(labeled.instance(0));
+        System.out.println("Result --> "+result);
+        System.out.println("cevap -->"+labeled.instance(0));
+
+        String[] cevaplar = labeled.instance(0).toString().split(",");
+        System.out.println("cevap 1 ->"+cevaplar[0]);
+        System.out.println("cevap 2 ->"+cevaplar[1]);
 
         question.setQuestion(labeled.instance(0).toString());
 
@@ -88,19 +103,20 @@ public class PostModelClass {
 
         testArffDelete();
 
-        return question;
+        return cevaplar[1];
     }
 
     //JSON'dan weka algoritmalarnda çalıştırmak için dönüştürdüğümüz test.arff adlı dosyayı silen fonk.
     public void testArffDelete() {
-        File file = new File("C:\\Users\\Makina\\Desktop\\test.arff");
+        File file = new File(filePath);
         if (file.delete()) {
-            System.out.println(file.getName() + " deleted!");
+            System.out.println(filePath + " deleted!");
         } else {
             System.out.println("Delete operation is failed.!!!");
         }
     }
 
+    //Modellerden dönen cevapları sayan fonksiyon
     public double[] rspCounter() {
 
         double[] responseCounter = new double[rsp.length];
@@ -135,5 +151,10 @@ public class PostModelClass {
             index = 0;
         }
         return rsp[index];
+    }
+
+    public String getFileName() {
+        long timeStamp = System.currentTimeMillis();
+        return timeStamp + ".arff";
     }
 }

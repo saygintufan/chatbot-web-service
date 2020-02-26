@@ -1,3 +1,2 @@
-com\mycompany\chatbotservice\application\ApplicationClass.class
-com\mycompany\chatbotservice\application\pojo\Person.class
 com\mycompany\chatbotservice\application\pojo\Question.class
+com\mycompany\chatbotservice\application\ApplicationClass.class
